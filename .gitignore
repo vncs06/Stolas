@@ -5,3 +5,4 @@ qa/
 *.pdf
 *.zip
 .env
+reports/

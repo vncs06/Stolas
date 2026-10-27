@@ -33,18 +33,21 @@ python scripts/pdf_audit.py audit original.pdf traduzido.pdf --out qa/
 
 A comparação de pixels não substitui revisão editorial ou visual humana.
 
-## Testes
+## Testes automatizados
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-Os testes foram adicionados, mas ainda precisam ser executados e validados em ambiente de CI.
+Os testes existentes verificam componentes implementados, mas não constituem homologação completa de livros reais.
 
-## Planejamento
+## Documentação
 
 - [Roadmap](docs/ROADMAP.md)
 - [Arquitetura](docs/ARCHITECTURE.md)
-- [Testes e homologação](docs/TESTING.md)
+- [Instruções permanentes para agentes](AGENTS.md)
+- [Protocolo editorial da skill](SKILL.md)
+
+Instruções específicas de homologação e testes pontuais são fornecidas fora do repositório.
 
 Não publique livros protegidos por direitos autorais nem remova DRM.

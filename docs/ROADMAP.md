@@ -1,6 +1,6 @@
 # Roadmap do Stolas
 
-Status: planejamento técnico; apenas inventário e diff básicos existem atualmente.
+Status: Sprint 1 em desenvolvimento; extração estruturada inicial e testes sintéticos publicados, ainda sem homologação registrada. Manual operacional Codex em AGENTS.md, docs/WORKFLOWS.md e docs/TOOL_REGISTRY.md.
 
 ## Oito frentes
 1. **Extração inteligente:** blocos, spans, ordem de leitura, geometria, imagens, vetores, notas e colunas.

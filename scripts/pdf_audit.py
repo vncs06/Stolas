@@ -6,7 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 
-import fitz
+import pymupdf
 from PIL import Image, ImageChops, ImageStat
 
 
@@ -19,7 +19,7 @@ def digest(path):
 
 
 def inventory(path):
-    doc = fitz.open(path)
+    doc = pymupdf.open(path)
     pages = []
     for index, page in enumerate(doc):
         blocks = page.get_text("dict")["blocks"]
@@ -43,12 +43,12 @@ def inventory(path):
 
 
 def render(page, dpi):
-    pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72), alpha=False)
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(dpi / 72, dpi / 72), alpha=False)
     return Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
 
 def audit(original, translated, out, dpi=150, start=1, end=None):
-    src, dst = fitz.open(original), fitz.open(translated)
+    src, dst = pymupdf.open(original), pymupdf.open(translated)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     total = max(len(src), len(dst))

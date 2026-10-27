@@ -14,6 +14,8 @@ Receber PDF legítimo, idioma alvo e preferências. Entregar PDF traduzido, glos
 ## Preflight
 Inventariar **100% das páginas**: dimensões, rotação, fontes, camada textual, blocos, ordem de leitura, imagens, vetores, links, notas, cabeçalhos e rodapés. Classificar PDF nativo, escaneado ou misto. Evitar OCR quando houver texto confiável. Atribuir IDs estáveis e hashes.
 
+Na implementação atual da Sprint 1, o manifesto registra o PyMuPDF e sua versão, combina APIs independentes para descobrir imagens, mantém `xref`, geometria, dimensões, formato e hashes recuperáveis, e preserva propriedades disponíveis dos traçados vetoriais. Páginas com imagens são sinalizadas para revisão de possível texto rasterizado; OCR não é executado automaticamente.
+
 ## Orquestração adaptativa
 1. Estimar carga por tokens, densidade e complexidade visual; dividir por capítulos, seções e parágrafos, recursivamente quando necessário. Sobreposição de contexto não pode duplicar texto na saída.
 2. Persistir `manifest.json`, `style-guide.md`, `glossary.json`, `protected-spans.json`, `decisions.jsonl` e `progress.json`.
@@ -49,4 +51,4 @@ Nenhuma etapa deve ser aprovada sem evidências; se faltarem recursos, salvar es
 Testar página textual, página mista e página com sigilos/hebraico, depois capítulo, só então livro completo. Registrar hash de origem e destino, versão de glossário, renderizações e decisão do revisor.
 
 ## Limites atuais
-Esta skill é um protocolo de trabalho; não contém, por si só, motor completo de tradução, segmentação, composição de PDF ou revisão visual independente.
+Esta skill é um protocolo de trabalho; não contém, por si só, motor completo de tradução, segmentação, composição de PDF ou revisão visual independente. A extração não reconhece semanticamente sigilos ou diagramas, não lê hebraico rasterizado e não garante ordem em layouts complexos. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.

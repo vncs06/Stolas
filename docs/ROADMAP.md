@@ -1,6 +1,6 @@
 # Roadmap do Stolas
 
-Status: Sprint 1 em desenvolvimento; extração estruturada inicial e testes sintéticos publicados, ainda sem homologação registrada.
+Status: Sprint 1 consolidada e tecnicamente pronta para encerramento. A extração estrutural e gráfica passou por duas homologações no material real e por profiling de recursos, sem regressão funcional conhecida no escopo implementado.
 
 ## Oito frentes
 1. **Extração inteligente:** blocos, spans, ordem de leitura, geometria, imagens, vetores, notas e colunas.
@@ -15,10 +15,12 @@ Status: Sprint 1 em desenvolvimento; extração estruturada inicial e testes sin
 ## Sprints e critérios de saída
 ### Sprint 1 — Fundação
 - Implementar extração estruturada de texto com coordenadas, fontes e ordem básica de leitura.
-- Produzir JSON por página, IDs estáveis, SHA-256 e registro de desenhos/imagens.
+- Produzir JSON por página, IDs determinísticos, SHA-256, versão do motor, referências recuperáveis de imagens e propriedades disponíveis dos vetores.
 - Marcar candidatos a spans especiais sem alegar reconhecimento perfeito de sigilos.
-- Testar com PDF sintético, páginas vazias, texto e imagens.
+- Testar com PDFs sintéticos: páginas vazias, texto, hebraico nativo, imagens internas/parcialmente externas/reutilizadas, páginas mistas e vetores.
 **Aceite:** inventário completo, schema documentado, testes passando e limitações registradas.
+
+Implementado: schema `0.2.0`, PyMuPDF 2.0 fixado, descoberta complementar e deduplicação de imagens, metadados recuperáveis, vetores enriquecidos, classificação de páginas, revisão conservadora de imagens e processamento incremental de hashes com cache mínimo por XRef. A homologação real preservou texto, imagens, vetores e IDs; o pico de memória deixou de acumular imagens decodificadas. O encerramento técnico da Sprint 1 não amplia o escopo para OCR, tradução ou reconstrução.
 
 ### Sprint 2 — Inteligência editorial
 - Segmentar por fronteiras semânticas e limites de tokens configuráveis.

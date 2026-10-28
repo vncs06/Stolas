@@ -4,7 +4,7 @@ Skill e ferramentas Python para tradução editorial contextual de PDFs, com pre
 
 ## Estado
 
-**Em desenvolvimento — Sprint 1 iniciada.** O repositório contém especificação editorial, extração estruturada inicial, pré-auditoria visual e teste sintético. **Não** realiza tradução e reconstrução automática de livros completos.
+**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório agora inclui a primeira camada de proteção e elegibilidade editorial. **Não** realiza tradução, OCR automático ou reconstrução de livros.
 
 ## Instalação
 
@@ -30,6 +30,32 @@ IDs de texto, imagem e vetor derivam do documento, página, tipo, geometria e co
 
 A ordem de leitura permanece heurística. O registro de imagens e comandos vetoriais permite recuperação e análise posterior, mas não garante reconstrução visual perfeita nem reconhecimento semântico de diagramas, sigilos ou hebraico rasterizado.
 
+## Proteção e classificação
+
+Classifique um manifesto de extração `0.2.0` sem modificá-lo:
+
+```bash
+python -m scripts.classify_protected workspace/manifest.json --out workspace/protected-spans.json
+```
+
+Para aplicar decisões editoriais externas:
+
+```bash
+python -m scripts.classify_protected workspace/manifest.json \
+  --overrides workspace/protection-overrides.json \
+  --out workspace/protected-spans.json
+```
+
+A saída usa schema e ruleset `0.2.0` e contém decisões por fragmento textual, imagem e vetor, além de regiões gráficas ou manuais. Cada decisão registra origem, página, geometria, classificação (`translatable`, `protected`, `review_required` ou `ignored`), razão, necessidade independente de revisão, origem da decisão e possibilidade de override. Decisões textuais acrescentam `linguistic_role` e `evidence`.
+
+O idioma predominante do documento é evidência, não uma lista do que deve ser traduzido. A análise usa a ordem estrutural de blocos, linhas e spans, contexto local direcional, scripts, forma textual e cues como `say`, `repeat`, `pronounce`, `chant` e `vibrate`. Uma instrução pode permanecer traduzível enquanto a fórmula ou pronúncia no mesmo span, no span seguinte ou na linha seguinte é protegida. Evidência forte produz `protected`; evidência textual ambígua mantém `translatable` com `review_required=true`; sem evidência, o texto permanece `translatable`.
+
+Texto editorial comum, caixa alta, nomes próprios, cidades, termos técnicos, palavras desconhecidas e proximidade de imagens não bastam para proteção. Scripts não latinos deliberados, fórmulas e representações fonéticas com evidência estrutural são preservados. Uma memória determinística propaga somente termos com semente forte e função compatível; conflitos de `linguistic_role` bloqueiam a propagação cega.
+
+Imagens e vetores são protegidos; imagens em páginas mistas ou sem texto nativo permanecem protegidas e também pedem revisão. Caracteres privados e símbolos isolados pedem revisão conservadora. A classificação não atribui significado religioso, não reconhece sigilos e não executa OCR.
+
+Overrides `0.1.0` ou `0.2.0` podem mirar `decision_id` ou `source_id` em `element_overrides` e acrescentar caixas em `region_overrides`. Uma decisão editorial prevalece sobre a regra automática. O artefato não contém timestamps, e seus IDs derivam do documento, página, geometria e referências de origem para manter determinismo.
+
 ## Pré-auditoria visual
 
 ```bash
@@ -45,7 +71,7 @@ A comparação de pixels não substitui revisão editorial ou visual humana.
 python -m unittest discover -s tests -v
 ```
 
-Os testes geram PDFs sintéticos durante a execução e cobrem texto, hebraico nativo, imagens internas e parcialmente externas, reutilização de imagens, páginas mistas e vazias, propriedades vetoriais, estabilidade de IDs, serialização e ausência das rotas de associação gráfica que decodificam todas as imagens. Eles não constituem homologação completa de livros reais.
+Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração, proteção contextual no mesmo span e entre spans/linhas, separação entre instrução e literal, falsos positivos, memória com conflitos de função, imagens, vetores, overrides, regiões manuais, determinismo, serialização e imutabilidade da entrada. A camada continua heurística mesmo após homologação em material real.
 
 ## Documentação
 

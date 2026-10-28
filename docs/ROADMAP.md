@@ -1,6 +1,6 @@
 # Roadmap do Stolas
 
-Status: Sprint 1 consolidada e tecnicamente pronta para encerramento. A extração estrutural e gráfica passou por duas homologações no material real e por profiling de recursos, sem regressão funcional conhecida no escopo implementado.
+Status: Sprint 1 consolidada. A extração estrutural e gráfica passou por duas homologações no material real e por profiling de recursos. A proteção contextual `0.2.0` foi implementada e homologada no livro real de 274 páginas como filtro heurístico de elegibilidade; isso não inicia tradução ou reconstrução.
 
 ## Oito frentes
 1. **Extração inteligente:** blocos, spans, ordem de leitura, geometria, imagens, vetores, notas e colunas.
@@ -21,6 +21,17 @@ Status: Sprint 1 consolidada e tecnicamente pronta para encerramento. A extraç�
 **Aceite:** inventário completo, schema documentado, testes passando e limitações registradas.
 
 Implementado: schema `0.2.0`, PyMuPDF 2.0 fixado, descoberta complementar e deduplicação de imagens, metadados recuperáveis, vetores enriquecidos, classificação de páginas, revisão conservadora de imagens e processamento incremental de hashes com cache mínimo por XRef. A homologação real preservou texto, imagens, vetores e IDs; o pico de memória deixou de acumular imagens decodificadas. O encerramento técnico da Sprint 1 não amplia o escopo para OCR, tradução ou reconstrução.
+
+### Proteção e classificação — etapa atual
+- Consumir o manifesto de extração `0.2.0` sem alterá-lo e produzir artefato versionado próprio.
+- Classificar spans, imagens e vetores como traduzíveis, protegidos, pendentes de revisão ou ignorados.
+- Representar regiões gráficas e caixas manuais, mantendo referências à origem.
+- Aceitar overrides editoriais determinísticos com precedência sobre heurísticas.
+- Sinalizar hebraico Unicode, símbolos e possíveis textos rasterizados sem executar OCR ou inferência religiosa.
+
+Implementado e homologado: schema e ruleset de proteção `0.2.0`, contexto direcional entre spans e linhas, separação de instrução e literal, papéis linguísticos, evidências, memória condicionada por função, regiões derivadas e manuais, CLI com escrita atômica, validação de entrada, overrides e IDs determinísticos. A suíte cobre falsos positivos e conflitos de memória; a execução no PDF de 274 páginas foi determinística e confirmou fórmulas, nomes com pronúncia e transliterações extensas sem preservar automaticamente prosa, títulos ou proximidade de imagem.
+
+Limite do aceite: a camada é um filtro heurístico. Texto rasterizado, símbolos gráficos e casos sem evidência estrutural continuam dependendo de revisão editorial ou overrides. Tradução, OCR, batching, reconstrução e glossário editorial completo permanecem fora desta etapa.
 
 ### Sprint 2 — Inteligência editorial
 - Segmentar por fronteiras semânticas e limites de tokens configuráveis.

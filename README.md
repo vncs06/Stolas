@@ -4,7 +4,7 @@ Skill e ferramentas Python para tradução editorial contextual de PDFs, com pre
 
 ## Estado
 
-**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório inclui proteção contextual, estrutura editorial e memória editorial persistente. **Não** realiza tradução, OCR automático ou reconstrução de livros.
+**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório inclui proteção contextual, estrutura editorial, memória editorial persistente e batching contextual. **Não** realiza tradução, chamadas a LLM, OCR automático ou reconstrução de livros.
 
 ## Instalação
 
@@ -92,6 +92,28 @@ A memória reúne glossário contextual, termos preservados, ocorrências, decis
 
 O merge é determinístico. Decisões humanas têm autoridade máxima; conflitos automáticos são registrados e resolvidos em favor delas. Alterações de decisão marcam dependentes anteriores como obsoletos para recomputação futura. Com entradas e configuração idênticas, a memória existente é reutilizada sem criar versão ou revisão artificial. A camada apenas prepara candidatos e decisões editoriais: não chama modelo de tradução nem produz texto traduzido.
 
+## Batching contextual
+
+Converta segmentos editoriais em lotes determinísticos para uma futura etapa de tradução:
+
+```bash
+python -m scripts.build_translation_batches \
+  workspace/editorial-structure.json \
+  workspace/editorial-memory.json \
+  workspace/protected-spans.json \
+  --out workspace/translation-batches.json
+```
+
+O artefato schema `0.1.0` separa obrigatoriamente `payload`, `context_before` e `context_after`. Cada segmento traduzível aparece como payload exatamente uma vez e na ordem editorial; contexto pode reaparecer apenas nos campos de contexto. Partes protegidas continuam estruturadas dentro do segmento, ficam fora de `payload_text` e carregam seus IDs de decisão de preservação.
+
+O crescimento dos lotes respeita headings, subheadings e limites de segmentos. Heading/subheading e sua primeira explicação formam um grupo semântico inseparável. O orçamento local divide a janela configurável entre payload, contexto, memória, futuras instruções de sistema e resposta. Segmentos ou grupos semânticos maiores que o orçamento não são cortados: permanecem inteiros com warning explícito.
+
+A memória é selecionada por ocorrência, termo/variante, contexto adjacente, preservação e override humano, até o orçamento configurado. Entradas obrigatórias de preservação não são descartadas silenciosamente. Cada inclusão registra motivos e dependências. Guia de estilo, conflitos relevantes, relação entre lotes, envelope de handoff e checkpoints de retomada também são persistidos.
+
+Use `--existing-batches` para reconciliar checkpoints. Mudança de memória relevante marca somente lotes dependentes como obsoletos quando a faixa editorial e a configuração permanecem compatíveis. Mudanças no artefato editorial ou configuração são detectadas. A camada não executa tradução nem chamadas externas.
+
+Opções de orçamento incluem `--max-input-tokens`, `--reserved-output-tokens`, `--reserved-system-tokens`, `--context-budget`, `--memory-budget` e `--profile`.
+
 ## Pré-auditoria visual
 
 ```bash
@@ -107,7 +129,7 @@ A comparação de pixels não substitui revisão editorial ou visual humana.
 python -m unittest discover -s tests -v
 ```
 
-Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração; proteção contextual; uma, duas e três colunas; títulos de largura completa; cabeçalhos, rodapés e paginação; tipos editoriais; fragmentação de spans e blocos; partes protegidas; reconciliação; agrupamento vetorial; glossário contextual; merge, versionamento, precedência humana, conflitos, guia de estilo, dependências e invalidação; CLI; determinismo; serialização e imutabilidade das entradas. As camadas continuam heurísticas mesmo após homologação em material real.
+Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração; proteção contextual; uma, duas e três colunas; títulos de largura completa; cabeçalhos, rodapés e paginação; tipos editoriais; fragmentação de spans e blocos; partes protegidas; reconciliação; agrupamento vetorial; glossário contextual; merge, versionamento, precedência humana, conflitos, guia de estilo, dependências e invalidação; cobertura 1:1 dos batches; divisão semântica; contexto deslizante; seleção de memória; orçamento; handoff e checkpoints; CLI; determinismo; serialização e imutabilidade das entradas. As camadas continuam heurísticas mesmo após homologação em material real.
 
 ## Documentação
 

@@ -1,6 +1,6 @@
 # Roadmap do Stolas
 
-Status: fundação editorial consolidada até a memória persistente `0.1.0`. A extração estrutural/gráfica, a proteção contextual `0.2.0`, a estrutura editorial `0.1.0` e a memória editorial `0.1.0` foram implementadas e homologadas no livro real de 274 páginas; isso não inicia tradução ou reconstrução.
+Status: fundação editorial consolidada até o batching contextual `0.1.0`. Extração estrutural/gráfica, proteção contextual `0.2.0`, estrutura editorial `0.1.0`, memória editorial `0.1.0` e preparação determinística de lotes foram implementadas e homologadas no livro real de 274 páginas; isso não inicia tradução, chamadas a LLM ou reconstrução.
 
 ## Oito frentes
 1. **Extração inteligente:** blocos, spans, ordem de leitura, geometria, imagens, vetores, notas e colunas.
@@ -55,9 +55,20 @@ Implementado e homologado: CLI com escrita atômica, schemas e hashes validados;
 
 Limite do aceite: candidatos lexicais e nomes inferidos são heurísticos e podem conter ruído ou deixar termos raros de fora; revisão humana continua necessária. A camada não cria tradução semântica, batching, chamadas a modelo, OCR, reconstrução ou QA visual.
 
+### Batching contextual — implementado
+- Consumir estrutura `0.1.0`, memória `0.1.0` e proteção `0.2.0` sem alterar seus contratos.
+- Separar payload de contexto anterior/posterior e provar cobertura 1:1 em ordem global.
+- Crescer lotes por fronteiras editoriais e orçamento configurável sem cortar segmentos, protected parts ou heading/subheading e primeira explicação.
+- Selecionar memória relevante com motivos auditáveis, incluindo preservações e overrides obrigatórios.
+- Persistir relações entre lotes, handoff tipado, dependências e checkpoints retomáveis com invalidação seletiva.
+
+Implementado e homologado: schema e versão `0.1.0`; estimador local determinístico; reservas de payload, contexto, memória, sistema e resposta; contexto deslizante; decisões protegidas estruturadas; memória seletiva; validação de cobertura; IDs determinísticos; escrita atômica; reconciliação de checkpoints e invalidação localizada. Fixtures cobrem capítulos, limites, listas, páginas, protected parts, contexto, memória, orçamento, segmentos superdimensionados, determinismo e retomada. A execução integral no livro de 274 páginas manteve cobertura completa e carregou uma pequena fração do glossário por lote.
+
+Limite do aceite: headings e subheadings dependem da classificação editorial heurística; a estimativa por bytes não corresponde exatamente ao tokenizer de um modelo futuro; segmentos inseparáveis acima do orçamento são preservados com warning. A camada não traduz, chama LLM, executa OCR, reconstrói PDF ou realiza QA visual.
+
 ### Sprint 2 — Inteligência editorial
-- Evoluir segmentos editoriais homologados para batching por limites semânticos e tokens configuráveis.
-- Usar a memória editorial homologada em handoffs, checkpoints e reconciliação de lotes.
+- Usar os batches homologados para execução controlada, cobertura de respostas e reconciliação textual.
+- Preencher handoffs e checkpoints somente a partir de resultados reais e auditáveis.
 - Integrar adaptador explícito de tradução (sem credenciais embutidas).
 **Aceite:** cobertura 1:1 por ID e retomada sem duplicação; revisão humana do texto.
 

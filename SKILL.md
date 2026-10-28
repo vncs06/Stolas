@@ -22,6 +22,8 @@ A camada editorial consome manifesto e proteção `0.2.0` e produz um artefato i
 
 A memória editorial consome estrutura editorial `0.1.0` e proteção `0.2.0` e produz um artefato persistente `0.1.0`. Ela extrai candidatos contextuais, registra ocorrências e proveniência, consolida termos preservados, decisões e estilo, e mantém dependências para invalidação. O merge é determinístico e decisões humanas prevalecem sobre candidatos automáticos. Esta camada não traduz.
 
+O batching contextual consome estrutura, memória e proteção homologadas e produz lotes `0.1.0`. Ele separa payload de contexto, prova cobertura 1:1, seleciona memória relevante e cria handoffs e checkpoints determinísticos. Partes protegidas permanecem estruturadas e nunca são incorporadas ao texto traduzível. Esta camada não chama LLM.
+
 ## Estrutura e segmentação editorial
 - Reconstruir ordem por geometria e agrupamento espacial; nunca alternar linhas de colunas quando a leitura correta percorre cada coluna inteira.
 - Tratar títulos de largura completa como âncoras. Classificar cabeçalhos, rodapés e paginação recorrentes sem remover conteúdo.
@@ -40,6 +42,18 @@ A memória editorial consome estrutura editorial `0.1.0` e proteção `0.2.0` e 
 5. Validar cobertura: cada segmento traduzível deve aparecer exatamente uma vez, sem omissões, truncamentos, duplicações ou placeholders perdidos.
 6. Reconciliar voz, registro, anáforas, referências, índice e continuidade entre lotes antes da diagramação.
 7. Criar checkpoints atômicos com hashes e versões editoriais; invalidar resultados dependentes de decisões alteradas. Não declarar conclusão parcial como integral.
+
+Na implementação atual, o batching local usa orçamento configurável e estimativa determinística por bytes UTF-8. `payload`, `context_before` e `context_after` são campos distintos; somente payload conta para cobertura e futura emissão. Lotes crescem até a fronteira segura anterior ao limite, sem cortar segmentos nem o par heading/subheading e primeira explicação. Um segmento inseparável acima do limite é mantido inteiro e sinalizado, nunca truncado.
+
+## Batching contextual
+- Cada `segment_id` traduzível deve aparecer como payload exatamente uma vez, em ordem global. Contexto não pode ser confundido com conteúdo de saída.
+- Não transformar unidades integralmente protegidas em payload. Em segmentos mistos, manter partes e decisões protegidas separadas do `payload_text`.
+- Reservar orçamento independente para payload, contexto, memória, futuras instruções e resposta. Não depender de tokenizer ou API externa para produzir um artefato válido.
+- Carregar apenas entradas de memória justificadas por ocorrência, variante, contexto, preservação ou decisão humana. Registrar o motivo de cada inclusão e seus IDs de dependência.
+- Incluir estilo global e decisões obrigatórias de preservação mesmo quando candidatos opcionais forem excluídos pelo orçamento; sinalizar excesso obrigatório.
+- Persistir vínculos anterior/próximo, seção, faixa global, envelope de handoff e checkpoint. Checkpoints concluídos devem sobreviver a reconstruções idênticas.
+- Invalidar somente lotes cuja memória relevante, proteção, estrutura ou configuração mudou quando a correspondência por faixa de payload permitir. Não reutilizar checkpoint incompatível.
+- Derivar IDs de documento, artefato editorial, faixa de segmentos, configuração e dependências relevantes, sem timestamps.
 
 ## Memória editorial
 - Identificar cada entrada por termo normalizado e contexto funcional; nunca impor uma tradução ou preservação global apenas pela superfície textual.
@@ -84,4 +98,4 @@ Nenhuma etapa deve ser aprovada sem evidências; se faltarem recursos, salvar es
 Testar página textual, página mista e página com sigilos/hebraico, depois capítulo, só então livro completo. Registrar hash de origem e destino, versão de glossário, renderizações e decisão do revisor.
 
 ## Limites atuais
-Esta skill é um protocolo de trabalho; não contém, por si só, motor de tradução, composição de PDF ou revisão visual independente. A proteção, a estrutura e a extração de candidatos da memória editorial continuam heurísticas e requerem revisão para casos ambíguos, scripts rasterizados, layouts complexos, legendas sem sinais tipográficos e gráficos semanticamente incertos. A extração não reconhece sigilos ou diagramas nem lê hebraico rasterizado. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.
+Esta skill é um protocolo de trabalho; não contém, por si só, motor de tradução, composição de PDF ou revisão visual independente. A proteção, a estrutura, a extração de candidatos da memória editorial e a detecção de fronteiras estruturais continuam heurísticas e requerem revisão para casos ambíguos, scripts rasterizados, layouts complexos, legendas sem sinais tipográficos e gráficos semanticamente incertos. A estimativa local de tokens não substitui o tokenizer de um modelo futuro. A extração não reconhece sigilos ou diagramas nem lê hebraico rasterizado. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.

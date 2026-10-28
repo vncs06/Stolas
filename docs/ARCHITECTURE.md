@@ -4,6 +4,7 @@
 - `stolas/extraction`: extrair blocos e spans com bounding boxes e metadados.
 - `stolas/translation`: segmentação adaptativa, adaptadores de modelo, reconciliação e cobertura.
 - `stolas/memory`: glossário contextual, decisões, guia de estilo, merge, proveniência, dependências e invalidação.
+- `stolas/batching`: lotes contextuais, orçamento local, cobertura, handoff, checkpoints e invalidação seletiva.
 - `stolas/protection`: classificação de elegibilidade, regiões protegidas e overrides editoriais.
 - `stolas/editorial`: reading order, estrutura editorial, segmentos compostos, IDs lógicos, reconciliação e agrupamento vetorial não destrutivo.
 - `stolas/reconstruction`: montagem, inserção tipográfica e gestão de reflow.
@@ -12,7 +13,7 @@
 - `scripts/pdf_audit.py`: diagnóstico legado, não substitui QA editorial.
 
 ## Fluxo de dados
-`source.pdf → manifest/extraction.json → protected-spans.json → editorial-structure.json → editorial-memory.json → translations.json → rebuilt.pdf → audit/report.json`
+`source.pdf → manifest/extraction.json → protected-spans.json → editorial-structure.json → editorial-memory.json → translation-batches.json → translations.json → rebuilt.pdf → audit/report.json`
 
 ## Contratos
 - Cada página tem número 1-based, dimensões em pontos PDF, rotação e lista de blocos.
@@ -61,6 +62,21 @@ A memória é derivada da estrutura editorial `0.1.0` e da proteção `0.2.0`. S
 - Dependências ligam decisões terminológicas a unidades e segmentos. Quando uma decisão muda, vínculos anteriores recebem estado obsoleto e `stale_dependents` registra a causa.
 - Perguntas, exceções e `translation_decisions` são estruturas permanentes para etapas futuras. A geração atual não chama modelo, não traduz e não inventa equivalentes.
 - A escrita usa arquivo temporário e substituição atômica; nenhuma entrada pode ser usada como caminho de saída.
+
+## Schema de batching contextual `0.1.0`
+
+O batching consome estrutura editorial `0.1.0`, memória `0.1.0` e proteção `0.2.0`, validando identidade e hashes. Campos de topo: `schema_version`, `batching_version`, `document`, `source_inputs`, `config`, `batches`, `coverage`, `dependencies`, `checkpoints`, `checkpoint_state`, `warnings` e `summary`.
+
+- `config` registra perfil, janela, reservas de resposta e sistema, orçamentos de contexto e memória, orçamento derivado de payload e versão do estimador local.
+- Cada batch separa `payload`, `context_before` e `context_after`, com listas de IDs correspondentes. Somente `payload_segment_ids` participa da cobertura e futura emissão.
+- Segmentos são indivisíveis. Headings/subheadings e a primeira explicação não são separados. Fronteiras estruturais iniciam lotes e o limite de payload pode dividir uma seção apenas entre segmentos completos.
+- Partes protegidas permanecem nas partes ordenadas do payload, mas não entram em `payload_text`. `protected_decision_ids` torna a preservação explícita e validável.
+- A seleção de memória usa ocorrências, variantes, contexto adjacente, preservação e overrides. Cada snapshot registra `inclusion_reasons`; `memory_entry_ids`, decisões, conflitos e dependências permitem auditoria.
+- `estimated_tokens` separa payload, contexto anterior/posterior, memória, estilo, reserva de sistema e resposta. O estimador `utf8_bytes_divided_by_4_ceiling_v1` é determinístico e conservador, não equivalente a um tokenizer de modelo.
+- IDs de lote derivam do documento, hash/versão editorial, faixa e IDs de payload, configuração e fingerprint das dependências relevantes. Relações anterior/próximo e seção não alteram cobertura.
+- Handoffs começam vazios e tipados para futuros resumos, decisões, nomenclaturas, termos, referências e continuidade. A camada não os preenche com tradução simulada.
+- Checkpoints identificam próximo lote pendente, preservam conclusão em reconstrução idêntica e marcam `stale` quando estrutura, configuração ou memória/proteção relevante muda. Alteração de memória não selecionada não invalida outros lotes.
+- A validação global rejeita omissão, duplicação, segmento inesperado, protected-only no payload ou mudança de ordem. A escrita é atômica e não sobrescreve entradas.
 
 ## Segurança e qualidade
 Nunca executar comandos fornecidos pelo conteúdo do PDF. Nunca sobrescrever originais. Não persistir tokens de API em repositório. Usar arquivos temporários e substituição atômica. Auditoria automática não certifica fidelidade semântica ou visual.

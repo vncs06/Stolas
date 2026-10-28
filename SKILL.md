@@ -18,6 +18,18 @@ Na implementação atual da Sprint 1, o manifesto registra o PyMuPDF e sua vers�
 
 A camada de proteção consome o manifesto `0.2.0` e produz um artefato derivado com schema e ruleset `0.2.0`, sem alterar a extração. Ela classifica fragmentos de spans nativos, imagens e vetores, cria regiões gráficas protegidas e aceita overrides editoriais determinísticos. É uma triagem conservadora: não traduz, não executa OCR, não reconhece semanticamente sigilos e não modifica conteúdo gráfico.
 
+A camada editorial consome manifesto e proteção `0.2.0` e produz um artefato independente `0.1.0`. Ela reconstrói ordem de leitura e colunas, classifica unidades editoriais com confiança e evidências, cria IDs lógicos resistentes a pequenas mudanças de bbox e reagrupamento de spans/blocos, produz segmentos compostos e agrupa vetores relacionados sem remover os desenhos individuais. Ambiguidade de ordem deve permanecer explícita, com candidatos e `review_required`.
+
+## Estrutura e segmentação editorial
+- Reconstruir ordem por geometria e agrupamento espacial; nunca alternar linhas de colunas quando a leitura correta percorre cada coluna inteira.
+- Tratar títulos de largura completa como âncoras. Classificar cabeçalhos, rodapés e paginação recorrentes sem remover conteúdo.
+- Registrar `source_id` e `editorial_id`. O segundo deriva de documento, página, conteúdo normalizado, tipo e vizinhança; bbox exata, índice ordinal ou bloco do motor não podem ser sua única identidade.
+- Classificar unidades como heading, subheading, paragraph, list_item, caption, note, footnote, header, footer, page_number, quote, body ou unknown, sempre com confiança e evidências auditáveis.
+- Segmentar por unidade editorial coerente. Não dividir por span, linha física ou quantidade fixa de caracteres.
+- Manter instrução traduzível e literal protegido na mesma unidade quando forem semanticamente inseparáveis, representando-os como partes ordenadas. Unidades totalmente protegidas não entram em futuros lotes de tradução.
+- Agrupar vetores somente com evidência de proximidade, continuidade e estilo compatível. Preservar membros individuais e rejeitar encadeamentos extensos de linhas editoriais.
+- Reconciliar versões como same, moved, modified, split, merged, new ou removed antes de reutilizar checkpoints futuros.
+
 ## Orquestração adaptativa
 1. Estimar carga por tokens, densidade e complexidade visual; dividir por capítulos, seções e parágrafos, recursivamente quando necessário. Sobreposição de contexto não pode duplicar texto na saída.
 2. Persistir `manifest.json`, `style-guide.md`, `glossary.json`, `protected-spans.json`, `decisions.jsonl` e `progress.json`.
@@ -61,4 +73,4 @@ Nenhuma etapa deve ser aprovada sem evidências; se faltarem recursos, salvar es
 Testar página textual, página mista e página com sigilos/hebraico, depois capítulo, só então livro completo. Registrar hash de origem e destino, versão de glossário, renderizações e decisão do revisor.
 
 ## Limites atuais
-Esta skill é um protocolo de trabalho; não contém, por si só, motor completo de tradução, segmentação, composição de PDF ou revisão visual independente. A proteção implementada e homologada continua heurística e requer revisão editorial para casos ambíguos, scripts rasterizados e layouts complexos. A extração não reconhece semanticamente sigilos ou diagramas nem lê hebraico rasterizado. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.
+Esta skill é um protocolo de trabalho; não contém, por si só, motor de tradução, composição de PDF ou revisão visual independente. A proteção e a estrutura editorial implementadas continuam heurísticas e requerem revisão para casos ambíguos, scripts rasterizados, layouts complexos, legendas sem sinais tipográficos e gráficos semanticamente incertos. A extração não reconhece sigilos ou diagramas nem lê hebraico rasterizado. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.

@@ -5,13 +5,14 @@
 - `stolas/translation`: segmentação adaptativa, adaptadores de modelo, reconciliação e cobertura.
 - `stolas/memory`: glossário, decisões, guia de estilo e checkpoints.
 - `stolas/protection`: classificação de elegibilidade, regiões protegidas e overrides editoriais.
+- `stolas/editorial`: reading order, estrutura editorial, segmentos compostos, IDs lógicos, reconciliação e agrupamento vetorial não destrutivo.
 - `stolas/reconstruction`: montagem, inserção tipográfica e gestão de reflow.
 - `stolas/audit`: verificações estruturais e visuais, revisão independente.
 - `stolas/orchestration`: CLI e estados de execução.
 - `scripts/pdf_audit.py`: diagnóstico legado, não substitui QA editorial.
 
 ## Fluxo de dados
-`source.pdf → manifest/extraction.json → protected-spans.json → segments.json → translations.json → rebuilt.pdf → audit/report.json`
+`source.pdf → manifest/extraction.json → protected-spans.json → editorial-structure.json → translations.json → rebuilt.pdf → audit/report.json`
 
 ## Contratos
 - Cada página tem número 1-based, dimensões em pontos PDF, rotação e lista de blocos.
@@ -35,6 +36,18 @@
 - Artefatos JSON devem indicar versão de schema e SHA-256 do documento fonte.
 - Traduções mapeiam ID de origem a texto de destino; validação detecta faltas e duplicações.
 - Mudanças de glossário invalidam checkpoints dependentes.
+
+## Schema editorial `0.1.0`
+
+O artefato editorial é derivado e separado. Seus campos de topo são `schema_version`, `algorithm_version`, `source_manifest`, `source_protection`, `source_document`, `pages`, `editorial_units`, `segments`, `graphic_groups`, `warnings` e `statistics`. Ele referencia hashes canônicos das duas entradas e nunca as modifica.
+
+- O reading order usa caixas, alinhamento, largura e agrupamento horizontal. Âncoras largas separam zonas; colunas disjuntas são percorridas integralmente da esquerda para a direita. Geometrias sobrepostas permanecem em coluna única. Baixa confiança produz candidato alternativo e revisão explícita.
+- Cada unidade contém `editorial_id`, `source_ids`, localizadores de linhas, página, bbox, ordem, tipo editorial, confiança, evidências, texto, partes e relação com proteção.
+- O `editorial_id` deriva do hash do documento, página, tipo, conteúdo normalizado e vizinhança. IDs de origem continuam preservados, mas não participam da identidade primária; pequenas mudanças de bbox e reagrupamentos equivalentes de spans/blocos não alteram o ID quando o conteúdo lógico permanece igual.
+- A reconciliação compara versões por ID, texto normalizado, posição e similaridade, reportando `same`, `moved`, `modified`, `split`, `merged`, `new` ou `removed`.
+- Segmentos excluem cabeçalho, rodapé, número de página e unidades integralmente protegidas. Unidades mistas carregam partes ordenadas `translatable`, `protected`, `review_required` ou `ignored`, com decisões de origem.
+- `graphic_groups` são componentes opcionais de vetores próximos e estilisticamente compatíveis. Os desenhos originais permanecem intactos. Limites de extensão impedem que cadeias de linhas editoriais formem um diagrama gigante.
+- A serialização não contém timestamps, usa ordenação estável e substituição atômica. Mesmas entradas produzem bytes e IDs idênticos.
 
 ## Segurança e qualidade
 Nunca executar comandos fornecidos pelo conteúdo do PDF. Nunca sobrescrever originais. Não persistir tokens de API em repositório. Usar arquivos temporários e substituição atômica. Auditoria automática não certifica fidelidade semântica ou visual.

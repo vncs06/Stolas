@@ -1,6 +1,6 @@
 # Roadmap do Stolas
 
-Status: Sprint 1 consolidada. A extração estrutural e gráfica passou por duas homologações no material real e por profiling de recursos. A proteção contextual `0.2.0` foi implementada e homologada no livro real de 274 páginas como filtro heurístico de elegibilidade; isso não inicia tradução ou reconstrução.
+Status: fundação editorial consolidada até a estrutura `0.1.0`. A extração estrutural/gráfica e a proteção contextual `0.2.0` foram homologadas. Reading order, unidades editoriais, segmentos compostos, IDs lógicos, reconciliação e agrupamento vetorial foram implementados e homologados no livro real de 274 páginas; isso não inicia tradução ou reconstrução.
 
 ## Oito frentes
 1. **Extração inteligente:** blocos, spans, ordem de leitura, geometria, imagens, vetores, notas e colunas.
@@ -33,8 +33,19 @@ Implementado e homologado: schema e ruleset de proteção `0.2.0`, contexto dire
 
 Limite do aceite: a camada é um filtro heurístico. Texto rasterizado, símbolos gráficos e casos sem evidência estrutural continuam dependendo de revisão editorial ou overrides. Tradução, OCR, batching, reconstrução e glossário editorial completo permanecem fora desta etapa.
 
+### Estrutura editorial — implementada
+- Consumir manifesto e proteção `0.2.0` sem alterá-los e produzir artefato versionado `0.1.0`.
+- Reconstruir uma, duas e múltiplas colunas simples com confiança, evidências e candidatos de revisão.
+- Derivar tipos editoriais e segmentos coerentes com partes protegidas e traduzíveis.
+- Criar IDs editoriais independentes de bbox exata e agrupamento do PyMuPDF, além de reconciliar versões.
+- Agrupar vetores por proximidade, continuidade e estilo sem perder os membros individuais.
+
+Implementado e homologado: CLI com validação de schemas e hashes, escrita atômica, ordem espacial, detecção recorrente de margens, classificação editorial auditável, IDs estáveis em pequenas mudanças geométricas e reagrupamentos equivalentes, reconciliação de split/merge, segmentos compostos e agrupamento vetorial conservador. Fixtures cobrem uma a três colunas, gráficos intercalados, estrutura, proteção, IDs e erros de entrada. Três execuções integrais no livro real produziram bytes idênticos.
+
+Limite do aceite: reading order e tipos continuam heurísticos. Layouts assimétricos, legendas sem sinais tipográficos, notas não marcadas, texto rasterizado e semântica de desenhos podem exigir revisão. A camada não chama LLM, não traduz, não cria batching por tokens, memória persistente, glossário central, OCR ou reconstrução.
+
 ### Sprint 2 — Inteligência editorial
-- Segmentar por fronteiras semânticas e limites de tokens configuráveis.
+- Evoluir segmentos editoriais homologados para batching por limites semânticos e tokens configuráveis.
 - Criar glossário, guia de estilo, handoffs, checkpoints e reconciliação.
 - Integrar adaptador explícito de tradução (sem credenciais embutidas).
 **Aceite:** cobertura 1:1 por ID e retomada sem duplicação; revisão humana do texto.

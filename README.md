@@ -4,7 +4,7 @@ Skill e ferramentas Python para tradução editorial contextual de PDFs, com pre
 
 ## Estado
 
-**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório agora inclui a primeira camada de proteção e elegibilidade editorial. **Não** realiza tradução, OCR automático ou reconstrução de livros.
+**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório inclui proteção contextual e uma primeira camada de estrutura editorial. **Não** realiza tradução, OCR automático ou reconstrução de livros.
 
 ## Instalação
 
@@ -56,6 +56,25 @@ Imagens e vetores são protegidos; imagens em páginas mistas ou sem texto nativ
 
 Overrides `0.1.0` ou `0.2.0` podem mirar `decision_id` ou `source_id` em `element_overrides` e acrescentar caixas em `region_overrides`. Uma decisão editorial prevalece sobre a regra automática. O artefato não contém timestamps, e seus IDs derivam do documento, página, geometria e referências de origem para manter determinismo.
 
+## Estrutura editorial
+
+Construa ordem de leitura, unidades editoriais e segmentos futuros a partir dos dois artefatos homologados:
+
+```bash
+python -m scripts.build_editorial_structure \
+  workspace/manifest.json \
+  workspace/protected-spans.json \
+  --out workspace/editorial-structure.json
+```
+
+A saída usa schema e algoritmo `0.1.0`. Ela registra hashes canônicos do manifesto e da proteção, recusa schemas incompatíveis, não altera as entradas e é gravada atomicamente. O mesmo manifesto, proteção e configuração produzem JSON byte a byte idêntico.
+
+O reading order combina geometria, sobreposição horizontal, largura, alinhamento e âncoras de largura completa. Colunas simples são lidas integralmente da esquerda para a direita; quando duas ordens permanecem plausíveis, a página recebe `review_required`, confiança, evidências e candidatos alternativos. Cabeçalhos, rodapés e números de página são classificados, não removidos.
+
+Unidades editoriais registram `editorial_id`, página, bbox, linhas e `source_id` de origem, ordem, tipo, confiança, evidências, texto e relação com decisões protegidas. Os IDs usam conteúdo normalizado, tipo, página e vizinhança, sem depender exclusivamente de índice, bbox exata ou bloco do PyMuPDF. `reconcile_editorial_structures` compara versões e informa `same`, `moved`, `modified`, `split`, `merged`, `new` e `removed`.
+
+Segmentos correspondem a unidades editoriais coerentes, nunca a um limite fixo de caracteres. Uma unidade mista mantém partes `translatable` e `protected` na ordem original; conteúdo integralmente protegido, cabeçalhos, rodapés e números de página não viram segmentos de tradução. O agrupamento vetorial é opcional e não destrutivo: cada `graphic_group` mantém os IDs dos desenhos individuais e rejeita cadeias extensas de regras editoriais.
+
 ## Pré-auditoria visual
 
 ```bash
@@ -71,7 +90,7 @@ A comparação de pixels não substitui revisão editorial ou visual humana.
 python -m unittest discover -s tests -v
 ```
 
-Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração, proteção contextual no mesmo span e entre spans/linhas, separação entre instrução e literal, falsos positivos, memória com conflitos de função, imagens, vetores, overrides, regiões manuais, determinismo, serialização e imutabilidade da entrada. A camada continua heurística mesmo após homologação em material real.
+Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração; proteção contextual; uma, duas e três colunas; títulos de largura completa; cabeçalhos, rodapés e paginação; tipos editoriais; fragmentação de spans e blocos; partes protegidas; reconciliação; agrupamento vetorial; CLI; determinismo; serialização e imutabilidade das entradas. As camadas continuam heurísticas mesmo após homologação em material real.
 
 ## Documentação
 

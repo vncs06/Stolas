@@ -1,6 +1,6 @@
 # Roadmap do Stolas
 
-Status: fundação editorial consolidada até a estrutura `0.1.0`. A extração estrutural/gráfica e a proteção contextual `0.2.0` foram homologadas. Reading order, unidades editoriais, segmentos compostos, IDs lógicos, reconciliação e agrupamento vetorial foram implementados e homologados no livro real de 274 páginas; isso não inicia tradução ou reconstrução.
+Status: fundação editorial consolidada até a memória persistente `0.1.0`. A extração estrutural/gráfica, a proteção contextual `0.2.0`, a estrutura editorial `0.1.0` e a memória editorial `0.1.0` foram implementadas e homologadas no livro real de 274 páginas; isso não inicia tradução ou reconstrução.
 
 ## Oito frentes
 1. **Extração inteligente:** blocos, spans, ordem de leitura, geometria, imagens, vetores, notas e colunas.
@@ -42,11 +42,22 @@ Limite do aceite: a camada é um filtro heurístico. Texto rasterizado, símbolo
 
 Implementado e homologado: CLI com validação de schemas e hashes, escrita atômica, ordem espacial, detecção recorrente de margens, classificação editorial auditável, IDs estáveis em pequenas mudanças geométricas e reagrupamentos equivalentes, reconciliação de split/merge, segmentos compostos e agrupamento vetorial conservador. Fixtures cobrem uma a três colunas, gráficos intercalados, estrutura, proteção, IDs e erros de entrada. Três execuções integrais no livro real produziram bytes idênticos.
 
-Limite do aceite: reading order e tipos continuam heurísticos. Layouts assimétricos, legendas sem sinais tipográficos, notas não marcadas, texto rasterizado e semântica de desenhos podem exigir revisão. A camada não chama LLM, não traduz, não cria batching por tokens, memória persistente, glossário central, OCR ou reconstrução.
+Limite do aceite: reading order e tipos continuam heurísticos. Layouts assimétricos, legendas sem sinais tipográficos, notas não marcadas, texto rasterizado e semântica de desenhos podem exigir revisão. A camada não chama LLM, não traduz, não cria batching por tokens, OCR ou reconstrução.
+
+### Memória editorial — implementada
+- Consumir estrutura editorial `0.1.0` e proteção `0.2.0`, validar identidade e hashes e produzir memória versionada `0.1.0`.
+- Extrair candidatos de glossário com contexto, variantes, papéis linguísticos, evidências e referências a unidades, segmentos e páginas.
+- Persistir termos preservados, decisões, guia de estilo, perguntas, exceções, referências cruzadas, histórico e proveniência.
+- Fazer merge determinístico com memória existente, decisões humanas, overrides e estilo; decisões humanas têm autoridade máxima.
+- Registrar dependências e marcar resultados anteriores como obsoletos quando uma decisão muda.
+
+Implementado e homologado: CLI com escrita atômica, schemas e hashes validados; candidatos contextuais; preservação proveniente da proteção; nomes, transliterações, termos técnicos e títulos revisáveis; guia de estilo configurável; merge e versionamento lógicos; conflitos explícitos; precedência humana; dependências e invalidação; serialização e IDs determinísticos. Fixtures cobrem consistência contextual, overrides, conflitos, merge, estilo, imutabilidade e determinismo. Três execuções integrais no livro real produziram bytes idênticos, e um merge sem mudanças reutilizou a mesma versão.
+
+Limite do aceite: candidatos lexicais e nomes inferidos são heurísticos e podem conter ruído ou deixar termos raros de fora; revisão humana continua necessária. A camada não cria tradução semântica, batching, chamadas a modelo, OCR, reconstrução ou QA visual.
 
 ### Sprint 2 — Inteligência editorial
 - Evoluir segmentos editoriais homologados para batching por limites semânticos e tokens configuráveis.
-- Criar glossário, guia de estilo, handoffs, checkpoints e reconciliação.
+- Usar a memória editorial homologada em handoffs, checkpoints e reconciliação de lotes.
 - Integrar adaptador explícito de tradução (sem credenciais embutidas).
 **Aceite:** cobertura 1:1 por ID e retomada sem duplicação; revisão humana do texto.
 

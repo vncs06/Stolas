@@ -1,9 +1,9 @@
 # Arquitetura técnica
 
-## Estrutura prevista
+## Estrutura
 - `stolas/extraction`: extrair blocos e spans com bounding boxes e metadados.
 - `stolas/translation`: segmentação adaptativa, adaptadores de modelo, reconciliação e cobertura.
-- `stolas/memory`: glossário, decisões, guia de estilo e checkpoints.
+- `stolas/memory`: glossário contextual, decisões, guia de estilo, merge, proveniência, dependências e invalidação.
 - `stolas/protection`: classificação de elegibilidade, regiões protegidas e overrides editoriais.
 - `stolas/editorial`: reading order, estrutura editorial, segmentos compostos, IDs lógicos, reconciliação e agrupamento vetorial não destrutivo.
 - `stolas/reconstruction`: montagem, inserção tipográfica e gestão de reflow.
@@ -12,7 +12,7 @@
 - `scripts/pdf_audit.py`: diagnóstico legado, não substitui QA editorial.
 
 ## Fluxo de dados
-`source.pdf → manifest/extraction.json → protected-spans.json → editorial-structure.json → translations.json → rebuilt.pdf → audit/report.json`
+`source.pdf → manifest/extraction.json → protected-spans.json → editorial-structure.json → editorial-memory.json → translations.json → rebuilt.pdf → audit/report.json`
 
 ## Contratos
 - Cada página tem número 1-based, dimensões em pontos PDF, rotação e lista de blocos.
@@ -35,7 +35,7 @@
 - IDs de decisões e regiões derivam de SHA-256 do documento, página, tipo, geometria e referências estruturais. Sem timestamps e com ordenação canônica, mesmas entradas, regras e overrides produzem saída idêntica.
 - Artefatos JSON devem indicar versão de schema e SHA-256 do documento fonte.
 - Traduções mapeiam ID de origem a texto de destino; validação detecta faltas e duplicações.
-- Mudanças de glossário invalidam checkpoints dependentes.
+- Mudanças de glossário ou decisão marcam dependentes anteriores como obsoletos para recomputação futura.
 
 ## Schema editorial `0.1.0`
 
@@ -48,6 +48,19 @@ O artefato editorial é derivado e separado. Seus campos de topo são `schema_ve
 - Segmentos excluem cabeçalho, rodapé, número de página e unidades integralmente protegidas. Unidades mistas carregam partes ordenadas `translatable`, `protected`, `review_required` ou `ignored`, com decisões de origem.
 - `graphic_groups` são componentes opcionais de vetores próximos e estilisticamente compatíveis. Os desenhos originais permanecem intactos. Limites de extensão impedem que cadeias de linhas editoriais formem um diagrama gigante.
 - A serialização não contém timestamps, usa ordenação estável e substituição atômica. Mesmas entradas produzem bytes e IDs idênticos.
+
+## Schema de memória editorial `0.1.0`
+
+A memória é derivada da estrutura editorial `0.1.0` e da proteção `0.2.0`. Seus campos de topo são `schema_version`, `memory_version`, `ruleset_version`, `source_document`, `source_inputs`, `style_guide`, `glossary`, `preserved_terms`, `decisions`, `translation_decisions`, `questions`, `exceptions`, `cross_references`, `conflicts`, `dependencies`, `stale_dependents`, `history` e `summary`.
+
+- `source_inputs` fixa versões e hashes canônicos da estrutura, proteção, regras, overrides, guia de estilo e idioma-alvo. A identidade do documento e o hash da proteção referenciada pela estrutura devem coincidir.
+- O glossário usa `(normalized_term, context_key)` como identidade semântica. Entradas registram variantes, categoria, idioma, decisão de preservação ou tradução preferida quando existente, confiança, fonte, estado, evidência, versão e ocorrências.
+- Ocorrências preservam `editorial_id`, `segment_id` opcional, página, ordem, posição, contexto curto e papel linguístico. Termos homógrafos em funções diferentes geram referências cruzadas em vez de uma decisão global.
+- Decisões são revisões lógicas imutáveis com IDs determinísticos. A ordem de autoridade é decisão humana, evidência protegida e candidato automático. Uma decisão humana existente não é substituída por uma nova heurística; a divergência vira conflito resolvido em favor humano.
+- O merge acrescenta ocorrências e novas decisões sem apagar histórico. A mesma memória, entradas e configuração retorna o mesmo artefato byte a byte; mudança relevante incrementa `memory_version`.
+- Dependências ligam decisões terminológicas a unidades e segmentos. Quando uma decisão muda, vínculos anteriores recebem estado obsoleto e `stale_dependents` registra a causa.
+- Perguntas, exceções e `translation_decisions` são estruturas permanentes para etapas futuras. A geração atual não chama modelo, não traduz e não inventa equivalentes.
+- A escrita usa arquivo temporário e substituição atômica; nenhuma entrada pode ser usada como caminho de saída.
 
 ## Segurança e qualidade
 Nunca executar comandos fornecidos pelo conteúdo do PDF. Nunca sobrescrever originais. Não persistir tokens de API em repositório. Usar arquivos temporários e substituição atômica. Auditoria automática não certifica fidelidade semântica ou visual.

@@ -20,6 +20,8 @@ A camada de proteção consome o manifesto `0.2.0` e produz um artefato derivado
 
 A camada editorial consome manifesto e proteção `0.2.0` e produz um artefato independente `0.1.0`. Ela reconstrói ordem de leitura e colunas, classifica unidades editoriais com confiança e evidências, cria IDs lógicos resistentes a pequenas mudanças de bbox e reagrupamento de spans/blocos, produz segmentos compostos e agrupa vetores relacionados sem remover os desenhos individuais. Ambiguidade de ordem deve permanecer explícita, com candidatos e `review_required`.
 
+A memória editorial consome estrutura editorial `0.1.0` e proteção `0.2.0` e produz um artefato persistente `0.1.0`. Ela extrai candidatos contextuais, registra ocorrências e proveniência, consolida termos preservados, decisões e estilo, e mantém dependências para invalidação. O merge é determinístico e decisões humanas prevalecem sobre candidatos automáticos. Esta camada não traduz.
+
 ## Estrutura e segmentação editorial
 - Reconstruir ordem por geometria e agrupamento espacial; nunca alternar linhas de colunas quando a leitura correta percorre cada coluna inteira.
 - Tratar títulos de largura completa como âncoras. Classificar cabeçalhos, rodapés e paginação recorrentes sem remover conteúdo.
@@ -38,6 +40,15 @@ A camada editorial consome manifesto e proteção `0.2.0` e produz um artefato i
 5. Validar cobertura: cada segmento traduzível deve aparecer exatamente uma vez, sem omissões, truncamentos, duplicações ou placeholders perdidos.
 6. Reconciliar voz, registro, anáforas, referências, índice e continuidade entre lotes antes da diagramação.
 7. Criar checkpoints atômicos com hashes e versões editoriais; invalidar resultados dependentes de decisões alteradas. Não declarar conclusão parcial como integral.
+
+## Memória editorial
+- Identificar cada entrada por termo normalizado e contexto funcional; nunca impor uma tradução ou preservação global apenas pela superfície textual.
+- Registrar ocorrências com `editorial_id`, `segment_id` quando houver, página, contexto curto e papel linguístico, mantendo evidência rastreável até os artefatos de origem.
+- Tratar extração lexical e nomes inferidos como candidatos revisáveis. Termos protegidos com evidência mantêm a decisão correspondente, sem transformar prosa comum em conteúdo intocável.
+- Aplicar decisões e preferências humanas com autoridade máxima. Registrar conflitos e preservar a decisão humana quando uma regra automática posterior discordar.
+- Fazer merge por identidade lógica, com ordenação canônica, histórico versionado e hashes de entrada, regras, overrides e estilo. Entradas idênticas não criam nova revisão.
+- Registrar dependências entre termos e unidades/segmentos; uma alteração de decisão deve marcar resultados dependentes anteriores como obsoletos, sem apagá-los silenciosamente.
+- Manter perguntas, exceções e decisões futuras explícitas. Não preencher traduções candidatas por inferência quando nenhuma tradução humana ou etapa de tradução as forneceu.
 
 ## Proteção e tradução
 - Tratar a classificação automática como elegibilidade preliminar, nunca como decisão semântica definitiva. Decisões editoriais manuais prevalecem sobre regras e heurísticas.
@@ -73,4 +84,4 @@ Nenhuma etapa deve ser aprovada sem evidências; se faltarem recursos, salvar es
 Testar página textual, página mista e página com sigilos/hebraico, depois capítulo, só então livro completo. Registrar hash de origem e destino, versão de glossário, renderizações e decisão do revisor.
 
 ## Limites atuais
-Esta skill é um protocolo de trabalho; não contém, por si só, motor de tradução, composição de PDF ou revisão visual independente. A proteção e a estrutura editorial implementadas continuam heurísticas e requerem revisão para casos ambíguos, scripts rasterizados, layouts complexos, legendas sem sinais tipográficos e gráficos semanticamente incertos. A extração não reconhece sigilos ou diagramas nem lê hebraico rasterizado. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.
+Esta skill é um protocolo de trabalho; não contém, por si só, motor de tradução, composição de PDF ou revisão visual independente. A proteção, a estrutura e a extração de candidatos da memória editorial continuam heurísticas e requerem revisão para casos ambíguos, scripts rasterizados, layouts complexos, legendas sem sinais tipográficos e gráficos semanticamente incertos. A extração não reconhece sigilos ou diagramas nem lê hebraico rasterizado. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.

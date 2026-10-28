@@ -4,7 +4,7 @@ Skill e ferramentas Python para tradução editorial contextual de PDFs, com pre
 
 ## Estado
 
-**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório inclui proteção contextual e uma primeira camada de estrutura editorial. **Não** realiza tradução, OCR automático ou reconstrução de livros.
+**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório inclui proteção contextual, estrutura editorial e memória editorial persistente. **Não** realiza tradução, OCR automático ou reconstrução de livros.
 
 ## Instalação
 
@@ -75,6 +75,23 @@ Unidades editoriais registram `editorial_id`, página, bbox, linhas e `source_id
 
 Segmentos correspondem a unidades editoriais coerentes, nunca a um limite fixo de caracteres. Uma unidade mista mantém partes `translatable` e `protected` na ordem original; conteúdo integralmente protegido, cabeçalhos, rodapés e números de página não viram segmentos de tradução. O agrupamento vetorial é opcional e não destrutivo: cada `graphic_group` mantém os IDs dos desenhos individuais e rejeita cadeias extensas de regras editoriais.
 
+## Memória editorial persistente
+
+Construa ou atualize a memória a partir da estrutura editorial e da proteção correspondentes:
+
+```bash
+python -m scripts.build_editorial_memory \
+  workspace/editorial-structure.json \
+  workspace/protected-spans.json \
+  --out workspace/editorial-memory.json
+```
+
+Para uma atualização incremental, use `--existing-memory`. Decisões humanas e preferências podem ser fornecidas com `--overrides`; um guia de estilo versionado pode ser fornecido com `--style-guide`. A saída schema `0.1.0` registra hashes das entradas, regras, overrides e estilo, além de versão lógica e histórico sem timestamps.
+
+A memória reúne glossário contextual, termos preservados, ocorrências, decisões, guia de estilo, perguntas, exceções, referências cruzadas, dependências e itens obsoletos. Cada ocorrência aponta para `editorial_id`, `segment_id` quando aplicável, página, contexto curto e papel linguístico. A chave combina termo normalizado e contexto: a mesma superfície em funções distintas não recebe uma decisão global cega.
+
+O merge é determinístico. Decisões humanas têm autoridade máxima; conflitos automáticos são registrados e resolvidos em favor delas. Alterações de decisão marcam dependentes anteriores como obsoletos para recomputação futura. Com entradas e configuração idênticas, a memória existente é reutilizada sem criar versão ou revisão artificial. A camada apenas prepara candidatos e decisões editoriais: não chama modelo de tradução nem produz texto traduzido.
+
 ## Pré-auditoria visual
 
 ```bash
@@ -90,7 +107,7 @@ A comparação de pixels não substitui revisão editorial ou visual humana.
 python -m unittest discover -s tests -v
 ```
 
-Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração; proteção contextual; uma, duas e três colunas; títulos de largura completa; cabeçalhos, rodapés e paginação; tipos editoriais; fragmentação de spans e blocos; partes protegidas; reconciliação; agrupamento vetorial; CLI; determinismo; serialização e imutabilidade das entradas. As camadas continuam heurísticas mesmo após homologação em material real.
+Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração; proteção contextual; uma, duas e três colunas; títulos de largura completa; cabeçalhos, rodapés e paginação; tipos editoriais; fragmentação de spans e blocos; partes protegidas; reconciliação; agrupamento vetorial; glossário contextual; merge, versionamento, precedência humana, conflitos, guia de estilo, dependências e invalidação; CLI; determinismo; serialização e imutabilidade das entradas. As camadas continuam heurísticas mesmo após homologação em material real.
 
 ## Documentação
 

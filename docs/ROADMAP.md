@@ -1,6 +1,6 @@
 # Roadmap do Stolas
 
-Status: fundação editorial consolidada até o batching contextual `0.1.0`. Extração estrutural/gráfica, proteção contextual `0.2.0`, estrutura editorial `0.1.0`, memória editorial `0.1.0` e preparação determinística de lotes foram implementadas e homologadas no livro real de 274 páginas; isso não inicia tradução, chamadas a LLM ou reconstrução.
+Status: pipeline estrutural consolidado até o motor de tradução contextual `0.1.0` com provider fake. Extração, proteção `0.2.0`, estrutura `0.1.0`, memória `0.1.0`, batching `0.1.0` e execução estruturada foram homologados no livro real de 274 páginas. Provider real, avaliação literária e reconstrução ainda não foram implementados.
 
 ## Oito frentes
 1. **Extração inteligente:** blocos, spans, ordem de leitura, geometria, imagens, vetores, notas e colunas.
@@ -66,10 +66,21 @@ Implementado e homologado: schema e versão `0.1.0`; estimador local determinís
 
 Limite do aceite: headings e subheadings dependem da classificação editorial heurística; a estimativa por bytes não corresponde exatamente ao tokenizer de um modelo futuro; segmentos inseparáveis acima do orçamento são preservados com warning. A camada não traduz, chama LLM, executa OCR, reconstrói PDF ou realiza QA visual.
 
+### Motor de tradução contextual — implementado com provider fake
+- Construir requests estruturados e usar interface genérica de provider sem credenciais ou SDK obrigatório.
+- Proteger conteúdo invariável com placeholders determinísticos e restauração exata.
+- Validar cobertura por segmento, contexto não emitido, glossário aprovado e QA textual conservador.
+- Persistir estados, retries limitados, handoffs compactos, propostas pendentes e checkpoints retomáveis.
+- Reconciliar inconsistências entre batches como issues, sem reescrita silenciosa.
+
+Implementado e homologado estruturalmente: schema `0.1.0`; interface `TranslationProvider`; provider fake determinístico com cenários de erro; requests e respostas por segmento; placeholders para partes protegidas e preservações da memória; regras de glossário por autoridade; cobertura; QA textual; handoffs; propostas isoladas; retry/resume; invalidação seletiva e reconciliação não destrutiva. O pipeline fake integral percorreu todos os batches reais sem depender de rede.
+
+Limite do aceite: o provider fake não traduz e não permite avaliar fidelidade, naturalidade, voz ou qualidade literária. O QA é estrutural e heurístico. Nenhum provider real ou credencial está incorporado; integração real e revisão humana permanecem necessárias antes de qualquer uso editorial.
+
 ### Sprint 2 — Inteligência editorial
-- Usar os batches homologados para execução controlada, cobertura de respostas e reconciliação textual.
-- Preencher handoffs e checkpoints somente a partir de resultados reais e auditáveis.
-- Integrar adaptador explícito de tradução (sem credenciais embutidas).
+- Integrar provider real opcional por configuração externa, sem credenciais embutidas.
+- Homologar amostras reais com revisão humana de fidelidade, naturalidade, terminologia e continuidade.
+- Evoluir reconciliação e handoffs a partir de respostas reais auditáveis.
 **Aceite:** cobertura 1:1 por ID e retomada sem duplicação; revisão humana do texto.
 
 ### Sprint 3 — Reconstrução

@@ -24,6 +24,8 @@ A memória editorial consome estrutura editorial `0.1.0` e proteção `0.2.0` e 
 
 O batching contextual consome estrutura, memória e proteção homologadas e produz lotes `0.1.0`. Ele separa payload de contexto, prova cobertura 1:1, seleciona memória relevante e cria handoffs e checkpoints determinísticos. Partes protegidas permanecem estruturadas e nunca são incorporadas ao texto traduzível. Esta camada não chama LLM.
 
+O motor de tradução consome batches `0.1.0`, memória `0.1.0` e proteção `0.2.0`. Ele constrói requests estruturados, executa um `TranslationProvider`, valida cobertura e invariantes, restaura placeholders, produz handoffs/checkpoints e reconcilia issues sem modificar a memória. O provider fake homologado valida o pipeline, mas não é tradução editorial real; provider real não está embutido.
+
 ## Estrutura e segmentação editorial
 - Reconstruir ordem por geometria e agrupamento espacial; nunca alternar linhas de colunas quando a leitura correta percorre cada coluna inteira.
 - Tratar títulos de largura completa como âncoras. Classificar cabeçalhos, rodapés e paginação recorrentes sem remover conteúdo.
@@ -79,6 +81,18 @@ Na implementação atual, o batching local usa orçamento configurável e estima
 - Manter glossário de termos técnicos e nomes; não inventar equivalentes consagrados, etimologias ou fontes.
 - Revisar terminologia e conteúdo em segunda passagem e registrar dúvidas.
 
+## Execução de tradução estruturada
+- Enviar ao provider um objeto estruturado por batch, nunca texto solto: payload, contexto, seção, memória, glossário, estilo, decisões protegidas, handoff e contrato de saída.
+- Substituir cada parte protegida e cada termo com preservação aprovada por placeholder determinístico, único e reversível. Validar ocorrência exatamente única antes de restaurar bytes originais.
+- Exigir uma resposta por `segment_id`. Omissão, duplicação, ID desconhecido, placeholder ausente/extra ou contexto emitido bloqueiam o batch.
+- Aplicar como obrigação somente traduções aprovadas e overrides humanos. Preservações aprovadas são invariantes; candidatos continuam sugestões e não podem virar regra automática.
+- Manter propostas do modelo em fila `pending_review`; nunca editar o glossário mestre diretamente a partir da resposta.
+- Produzir handoff compacto com resumo, termos, propostas, referentes, ambiguidades, pendências e continuidade. Não copiar capítulos ou traduções integrais no handoff.
+- Retomar batches aprovados somente quando ID e fingerprint de dependência coincidirem. Reexecutar batches stale; limitar retries para timeout e falha temporária; não repetir indefinidamente erro permanente ou resposta inválida.
+- Executar QA estrutural/textual antes da aprovação: cobertura, proteção, placeholders, números, URLs, notas, truncamento, duplicação e vazamento de contexto. Não confundir essas verificações com revisão literária.
+- Reconciliar terminologia, nomes preservados, registro e continuidade como issues e recomendações. Não reescrever silenciosamente.
+- Providers reais devem implementar a interface genérica e receber credenciais externamente. Nunca persistir chaves ou tornar SDK de fornecedor requisito do core.
+
 ## Reconstrução editorial
 Preservar geometria, imagens, vetores, sigilos, ornamentos e tipografia quando possível. Remover corretamente texto original antes de inserir tradução, sem texto original visível ou extraível sob a nova camada. Usar fontes licenciadas com suporte ao idioma. Não cortar texto nem reduzir fontes até ficarem ilegíveis. Se a tradução não couber, registrar divergência e pedir decisão sobre reflow/expansão; nunca omitir conteúdo.
 
@@ -98,4 +112,4 @@ Nenhuma etapa deve ser aprovada sem evidências; se faltarem recursos, salvar es
 Testar página textual, página mista e página com sigilos/hebraico, depois capítulo, só então livro completo. Registrar hash de origem e destino, versão de glossário, renderizações e decisão do revisor.
 
 ## Limites atuais
-Esta skill é um protocolo de trabalho; não contém, por si só, motor de tradução, composição de PDF ou revisão visual independente. A proteção, a estrutura, a extração de candidatos da memória editorial e a detecção de fronteiras estruturais continuam heurísticas e requerem revisão para casos ambíguos, scripts rasterizados, layouts complexos, legendas sem sinais tipográficos e gráficos semanticamente incertos. A estimativa local de tokens não substitui o tokenizer de um modelo futuro. A extração não reconhece sigilos ou diagramas nem lê hebraico rasterizado. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.
+Esta skill é um protocolo de trabalho e contém um motor estrutural com provider fake, não um tradutor editorial autônomo nem provider real embutido. Não contém composição de PDF ou revisão visual independente. A proteção, a estrutura, a extração de candidatos da memória editorial e a detecção de fronteiras estruturais continuam heurísticas e requerem revisão para casos ambíguos, scripts rasterizados, layouts complexos, legendas sem sinais tipográficos e gráficos semanticamente incertos. QA textual automático não prova fidelidade, naturalidade ou qualidade literária. A estimativa local de tokens não substitui o tokenizer de um modelo futuro. A extração não reconhece sigilos ou diagramas nem lê hebraico rasterizado. Imagens e vetores são registrados para recuperação futura, sem promessa de reconstrução visual perfeita.

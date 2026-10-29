@@ -2,7 +2,7 @@
 
 ## Estrutura
 - `stolas/extraction`: extrair blocos e spans com bounding boxes e metadados.
-- `stolas/translation`: segmentação adaptativa, adaptadores de modelo, reconciliação e cobertura.
+- `stolas/translation`: requests estruturados, providers, placeholders, execução, QA, handoffs, retry/resume e reconciliação.
 - `stolas/memory`: glossário contextual, decisões, guia de estilo, merge, proveniência, dependências e invalidação.
 - `stolas/batching`: lotes contextuais, orçamento local, cobertura, handoff, checkpoints e invalidação seletiva.
 - `stolas/protection`: classificação de elegibilidade, regiões protegidas e overrides editoriais.
@@ -77,6 +77,21 @@ O batching consome estrutura editorial `0.1.0`, memória `0.1.0` e proteção `0
 - Handoffs começam vazios e tipados para futuros resumos, decisões, nomenclaturas, termos, referências e continuidade. A camada não os preenche com tradução simulada.
 - Checkpoints identificam próximo lote pendente, preservam conclusão em reconstrução idêntica e marcam `stale` quando estrutura, configuração ou memória/proteção relevante muda. Alteração de memória não selecionada não invalida outros lotes.
 - A validação global rejeita omissão, duplicação, segmento inesperado, protected-only no payload ou mudança de ordem. A escrita é atômica e não sobrescreve entradas.
+
+## Schema de tradução contextual `0.1.0`
+
+O motor consome batches `0.1.0`, memória `0.1.0` e proteção `0.2.0`. O artefato registra `schema_version`, `translation_version`, documento, idiomas, provider, hashes/configuração, `batch_results`, `segment_results`, `handoffs`, `proposals`, `issues`, `coverage`, `dependencies`, `checkpoint_state` e `summary`.
+
+- `TranslationProvider` é uma interface abstrata independente de fornecedor. `FakeTranslationProvider` simula sucesso, omissão, duplicação, ID desconhecido, corrupção de placeholder, resposta malformada, timeout, erro temporário/permanente, vazamento de contexto e propostas, sem rede.
+- Requests incluem payload por segmento, contexto somente leitura, seção, regras de glossário classificadas por autoridade, estilo, decisões protegidas, handoff anterior e contrato de saída.
+- Partes protegidas e termos com `preserve=true` recebem placeholders `[[STOLAS_PROTECTED_<hash>]]` por ocorrência. A identidade inclui documento, batch, segmento, parte, ocorrência, tipo e hash do original. Colisão, ausência, duplicação ou placeholder desconhecido bloqueia a resposta; a restauração reinsere o texto original exato.
+- Regras `mandatory_translation` exigem entrada aprovada com tradução preferida; `mandatory_preservation` exige preservação; candidatos são `suggested`; demais casos ficam `ambiguous`. Overrides já consolidados na memória mantêm a maior autoridade.
+- Cada resposta deve conter exatamente uma entrada para cada payload `segment_id`. Context IDs nunca entram em `segment_results`. Cobertura inválida ou QA com erro deixa o batch `blocked`.
+- Estados lógicos são `pending`, `translating`, `translated`, `validating`, `approved`, `blocked` e `stale`. Não há timestamps na identidade. Retry é limitado a exceções retryable; respostas inválidas e erros permanentes não entram em loop.
+- Handoffs aprovados são compactos e encadeados. Propostas recebem ID determinístico e estado `pending_review`; a memória mestre é somente leitura.
+- Resume reutiliza resultado aprovado quando batch ID, payload e fingerprint coincidem. Mudança relevante reexecuta o batch correspondente; execução parcial mantém os demais como `pending` ou `stale`.
+- QA textual preserva números, URLs e notas, procura truncamento, duplicação, contexto copiado e delimitadores desequilibrados. Reconciliação registra conflitos terminológicos, preservações inconsistentes, mudança de registro e flags de continuidade sem alterar texto.
+- O provider fake prefixa conteúdo para provar transformação estrutural, mas não constitui tradução real. Providers externos são opcionais e devem fornecer credenciais fora do repositório.
 
 ## Segurança e qualidade
 Nunca executar comandos fornecidos pelo conteúdo do PDF. Nunca sobrescrever originais. Não persistir tokens de API em repositório. Usar arquivos temporários e substituição atômica. Auditoria automática não certifica fidelidade semântica ou visual.

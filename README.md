@@ -4,7 +4,7 @@ Skill e ferramentas Python para tradução editorial contextual de PDFs, com pre
 
 ## Estado
 
-**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório inclui proteção contextual, estrutura editorial, memória editorial persistente e batching contextual. **Não** realiza tradução, chamadas a LLM, OCR automático ou reconstrução de livros.
+**Em desenvolvimento.** A extração estrutural da Sprint 1 está consolidada e o repositório inclui proteção contextual, estrutura editorial, memória editorial persistente, batching contextual e um motor de tradução estruturado com provider fake. **Não** inclui provider real embutido, OCR automático ou reconstrução de livros.
 
 ## Instalação
 
@@ -114,6 +114,30 @@ Use `--existing-batches` para reconciliar checkpoints. Mudança de memória rele
 
 Opções de orçamento incluem `--max-input-tokens`, `--reserved-output-tokens`, `--reserved-system-tokens`, `--context-budget`, `--memory-budget` e `--profile`.
 
+## Motor de tradução contextual
+
+Execute os batches por uma interface de provider estruturada:
+
+```bash
+python -m scripts.translate_batches \
+  workspace/translation-batches.json \
+  workspace/editorial-memory.json \
+  workspace/protected-spans.json \
+  --provider fake \
+  --target-language pt-BR \
+  --out workspace/translation-results.json
+```
+
+O provider `fake` é local, determinístico e serve apenas para validar o pipeline; ele não produz tradução editorial real. Providers externos devem implementar `TranslationProvider`, receber requests estruturados e retornar o schema de resposta esperado. O core não contém credenciais, SDK obrigatório ou lógica acoplada a fornecedor.
+
+Cada request contém payload por segmento, contexto somente para leitura, seção, memória e glossário relevantes, estilo, decisões protegidas, handoff anterior e contrato de saída. Fórmulas, transliterações, nomes e termos marcados para preservação são substituídos por placeholders únicos derivados de hashes. A resposta deve devolver cada placeholder exatamente uma vez; o core restaura o texto original e bloqueia omissão, duplicação, placeholder desconhecido ou alteração. Placeholders nunca permanecem no resultado final.
+
+Cada resposta deve mapear explicitamente `segment_id` para texto. Cobertura incompleta, ID extra, ID duplicado, vazamento de contexto ou falha de QA impede aprovação do batch. O QA automático verifica estrutura, proteção, números, URLs, referências de nota, truncamento evidente, duplicação do original, contexto copiado e balanceamento básico; ele não avalia qualidade literária.
+
+Resultados usam schema `0.1.0` e persistem estados, tentativas, dependências, handoffs compactos, propostas terminológicas pendentes, issues de reconciliação, cobertura e checkpoints. `--existing-results --resume` reutiliza batches aprovados compatíveis. Mudanças no batch ou fingerprint relevante reexecutam somente dependentes; retries são limitados e distinguem erro temporário, timeout, erro permanente e resposta inválida.
+
+Propostas do provider nunca alteram a memória mestre. A reconciliação apenas registra conflitos terminológicos, preservação inconsistente, mudança de registro e flags de continuidade, sem reescrever traduções silenciosamente. Atualmente apenas `fake` vem registrado; providers reais são integrações opcionais futuras.
+
 ## Pré-auditoria visual
 
 ```bash
@@ -129,7 +153,7 @@ A comparação de pixels não substitui revisão editorial ou visual humana.
 python -m unittest discover -s tests -v
 ```
 
-Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração; proteção contextual; uma, duas e três colunas; títulos de largura completa; cabeçalhos, rodapés e paginação; tipos editoriais; fragmentação de spans e blocos; partes protegidas; reconciliação; agrupamento vetorial; glossário contextual; merge, versionamento, precedência humana, conflitos, guia de estilo, dependências e invalidação; cobertura 1:1 dos batches; divisão semântica; contexto deslizante; seleção de memória; orçamento; handoff e checkpoints; CLI; determinismo; serialização e imutabilidade das entradas. As camadas continuam heurísticas mesmo após homologação em material real.
+Os testes geram PDFs e manifestos sintéticos durante a execução. Cobrem extração; proteção contextual; uma, duas e três colunas; títulos de largura completa; cabeçalhos, rodapés e paginação; tipos editoriais; fragmentação de spans e blocos; partes protegidas; reconciliação; agrupamento vetorial; glossário contextual; merge, versionamento, precedência humana, conflitos, guia de estilo, dependências e invalidação; cobertura 1:1 dos batches; divisão semântica; contexto deslizante; seleção de memória; orçamento; provider fake; placeholders; glossário obrigatório; handoffs reais; retry, resume, QA textual e reconciliação; CLI; determinismo; serialização e imutabilidade das entradas. As camadas continuam heurísticas mesmo após homologação em material real.
 
 ## Documentação
 
